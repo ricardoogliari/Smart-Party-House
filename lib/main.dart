@@ -4,13 +4,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:pubnub/pubnub.dart';
 
-typedef void OnError(Exception exception);
-
 void main() {
-  runApp(new MaterialApp(home: new ExampleApp()));
+  runApp(
+      MaterialApp(
+          home: MainWidget()
+      )
+  );
 }
 
-class ExampleApp extends StatelessWidget {
+class MainWidget extends StatelessWidget {
   AudioPlayer advancedPlayer;
   AudioCache audioCache;
 
@@ -23,11 +25,11 @@ class ExampleApp extends StatelessWidget {
   PubNub pubnub;
 
   void initPlayer(){
-    advancedPlayer = new AudioPlayer();
-    audioCache = new AudioCache(fixedPlayer: advancedPlayer);
+    advancedPlayer = AudioPlayer();
+    audioCache = AudioCache(fixedPlayer: advancedPlayer);
 
     advancedPlayer.onPlayerCompletion.every((element) {
-      myChannel.publish({ 'action': 0 });
+      publishToPubNub(0);
       return true;
     });
   }
@@ -41,11 +43,11 @@ class ExampleApp extends StatelessWidget {
           children: [
             _btn('Play', () {
               audioCache.play('one_horse_town.mp3');
-              myChannel.publish({ 'action': 1 });
+              publishToPubNub(1);
             }),
             _btn('Stop', () {
               advancedPlayer.stop();
-              myChannel.publish({ 'action': 0 });
+              publishToPubNub(0);
             }),
           ]
         ),
@@ -55,7 +57,11 @@ class ExampleApp extends StatelessWidget {
   Widget _btn(String txt, VoidCallback onPressed) {
     return ButtonTheme(
         minWidth: 48.0,
-        child: RaisedButton(child: Text(txt), onPressed: onPressed));
+        child: ElevatedButton(
+            child: Text(txt),
+            onPressed: onPressed
+        )
+    );
   }
 
   @override
@@ -64,14 +70,16 @@ class ExampleApp extends StatelessWidget {
     pubnub = PubNub(defaultKeyset: myKeyset);
     myChannel = pubnub.channel('node-red');
 
-    return DefaultTabController(
-      length: 1,
-      child: Scaffold(
+    return Scaffold(
         appBar: AppBar(
           title: Text('Smart Party House'),
         ),
         body: _body()
-      ),
-    );
+      );
   }
+
+  publishToPubNub(int action){
+    myChannel.publish({ 'action': action });
+  }
+
 }
